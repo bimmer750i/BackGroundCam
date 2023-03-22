@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">BackGroundCam</string>
+    <string name="channel_name">Service Notification Channel</string>
+    <string name="channel_description">Channel for Displaying Serviice Notification</string>
+    <string name="stop_recording_action">Tap to stop recording</string>
+    <string name="not_all_permissions">Not all permissions granted</string>
+    <string name="all_permissions_granted">All permissions granted</string>
+</resources>
