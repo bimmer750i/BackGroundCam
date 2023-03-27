@@ -1,40 +1,21 @@
 package com.backgroundcam.app
 
 import android.Manifest
-import android.content.*
+import android.content.Intent
 import android.content.pm.PackageManager
-import android.hardware.Camera
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.IBinder
-import android.os.PersistableBundle
-import android.provider.MediaStore
 import android.util.Log
-import android.view.Surface
-import android.view.SurfaceHolder
-import android.view.SurfaceView
 import android.widget.Toast
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.video.*
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.content.PermissionChecker
 import com.backgroundcam.app.databinding.ActivityMainBinding
-import java.io.File
-import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var serviceIntent: Intent
     companion object {
-        @JvmStatic lateinit var preview: Preview
-        @JvmStatic lateinit var surfaceProvider: Preview.SurfaceProvider
-        @JvmStatic lateinit var aContext: Context
+        @JvmStatic lateinit var serviceIntent: Intent
     }
     private val TAG = "BackGroundCam"
     private val OLD_VERSIONS_REQUEST_CODE = 1
@@ -46,40 +27,30 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         serviceIntent = Intent(applicationContext,CameraService::class.java)
         setContentView(binding.root)
-        aContext = this
-        surfaceProvider = binding.viewFinder.surfaceProvider
         binding.button.setOnClickListener {
             Log.d(TAG, "Start button clicked")
             if (!checkPermissions()) {
                 makeToast(getString(R.string.not_all_permissions))
             }
             else {
-                bindService(serviceIntent,object: ServiceConnection {
-                    override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
-                        Log.d(TAG, "Service connected")
-                    }
-
-                    override fun onServiceDisconnected(p0: ComponentName?) {
-                        Log.d(TAG, "Service disconnected")
-                    }
-                },Context.BIND_ABOVE_CLIENT)
                 ContextCompat.startForegroundService(applicationContext,serviceIntent)
             }
         }
         binding.button2.setOnClickListener {
            stopService(serviceIntent)
         }
-        preview = Preview.Builder()
-            .build()
-            .also {
-                it.setSurfaceProvider(binding.viewFinder.surfaceProvider) }
+        binding.button3.setOnClickListener {
+            val intent = Intent(this,AnotherActivity::class.java)
+            startActivity(intent)
+        }
         requestPermissions()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        applicationContext.stopService(serviceIntent)
+        stopService(serviceIntent)
     }
+
 
     private fun requestPermissions() {
         if (Build.VERSION.SDK_INT < 29 ) {

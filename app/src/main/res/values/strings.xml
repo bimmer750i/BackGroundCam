@@ -5,4 +5,5 @@
     <string name="stop_recording_action">Tap to stop recording</string>
     <string name="not_all_permissions">Not all permissions granted</string>
     <string name="all_permissions_granted">All permissions granted</string>
+    <string name="example_appwidget_description">A widget that is cool as FUCK !!!</string>
 </resources>

@@ -4,27 +4,19 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.*
 import android.content.*
-import android.content.pm.PackageManager
-import android.hardware.camera2.CameraManager
 import android.os.*
 import android.provider.MediaStore
 import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
-import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.*
-import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleService
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.concurrent.ExecutorService
 
 
 class CameraService(): LifecycleService() {
@@ -34,11 +26,7 @@ class CameraService(): LifecycleService() {
     private lateinit var receiver: ActionReceiver
     private lateinit var notification: Notification
     private lateinit var notificationManager: NotificationManager
-    companion object {
-        const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
-    }
-
-    private var preview: Preview? = null
+    val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
 
     private lateinit var activeRecording: Recording
     private lateinit var videoCapture: VideoCapture<Recorder>
@@ -46,6 +34,11 @@ class CameraService(): LifecycleService() {
     private lateinit var contentValues1: ContentValues
 
     private lateinit var mediaStoreOutputOptions: MediaStoreOutputOptions
+
+    companion object {
+        @JvmStatic var running = false
+    }
+
 
 
 
@@ -61,6 +54,10 @@ class CameraService(): LifecycleService() {
     @SuppressLint("MissingPermission")
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
+        if (running) {
+            stopSelf()
+            running = false
+        }
         val intentAction = Intent()
         intentAction.putExtra("action", "action1").action = "action"
         // TODO PendingIntent version
@@ -74,13 +71,7 @@ class CameraService(): LifecycleService() {
             .build()
         startForeground(1,notification)
         startRecording()
-        try {
-
-        }
-        catch (e: java.lang.Exception) {
-            Log.d(TAG, "${e.message}")
-        }
-
+        running = true
         return START_STICKY
     }
 
@@ -88,36 +79,24 @@ class CameraService(): LifecycleService() {
         Log.d(TAG, "Service destroyed")
         unregisterReceiver(receiver)
         stopRecording()
+        running = false
         super.onDestroy()
     }
 
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         val recorder = Recorder.Builder()
-            .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+            .setQualitySelector(QualitySelector.from(Quality.SD))
             .build()
         videoCapture = VideoCapture.withOutput(recorder)
         Log.d(TAG, "VideoCapture initialized: ${this::videoCapture.isInitialized}")
 
         cameraProviderFuture.addListener({
-            // Used to bind the lifecycle of cameras to the lifecycle owner
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-
-            preview = Preview.Builder()
-                .build()
-                .also {
-                    it.setSurfaceProvider { Log.d(TAG, "Surface requested") }
-                }
-
-            // Select back camera as a default
             val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
 
             try {
-                // Unbind use cases before rebinding
                 cameraProvider.unbindAll()
-
-                // Bind use cases to camera
-
                 cameraProvider
                     .bindToLifecycle(this, cameraSelector, videoCapture)
             } catch(exc: Exception) {
@@ -131,6 +110,7 @@ class CameraService(): LifecycleService() {
     private fun startRecording() {
         val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
             .format(System.currentTimeMillis())
+
         contentValues1 = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
@@ -167,17 +147,12 @@ class CameraService(): LifecycleService() {
                     }
                 }
             }
+
     }
 
 
     fun stopRecording() {
         activeRecording.stop()
-        try {
-
-        }
-        catch (e: java.lang.Exception) {
-            Log.d(TAG, "${e.message}")
-        }
     }
 
 
@@ -200,15 +175,14 @@ class CameraService(): LifecycleService() {
 
             val action = intent.getStringExtra("action")
             if (action == "action1") {
-                performAction1()
+                stopAction()
             }
         }
 
-        fun performAction1() {
+        fun stopAction() {
             notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.cancelAll()
             this@CameraService.stopSelf()
-
         }
     }
 }
