@@ -13,17 +13,14 @@ import androidx.core.content.ContextCompat
 
 class WidgetProvider: AppWidgetProvider() {
 
+    //Сначала нужно прописать в манифесте
+    // Для настройки виджета смотреть @xml/example_appwidget_info
+    //Два разных файла для разных версий, они незначительно отличаются
+
     private val TAG = "WidgetProvider"
 
     override fun onReceive(context: Context?, intent: Intent?) {
-        if (context != null) {
-            if (CameraService.running) {
-                context.stopService(intent)
-            }
-            else {
-                context.startForegroundService(intent)
-            }
-        }
+        super.onReceive(context, intent)
     }
 
 
@@ -35,22 +32,27 @@ class WidgetProvider: AppWidgetProvider() {
         super.onUpdate(context, appWidgetManager, appWidgetIds)
         Log.d(TAG, "WidgetProvider onUpdate method called")
         appWidgetIds?.forEach { appWidgetId ->
-            // Create an Intent to launch ExampleActivity.
+
+            // Задаем интент для компонента
             val intent = Intent(context,CameraService::class.java)
-            val pendingIntent: PendingIntent = PendingIntent.getBroadcast(context,1,intent,PendingIntent.FLAG_MUTABLE)
+
+            // ПендингИнтент для запуска компонента, впоследствии задaется для кнопки виджета, в данном случае
+            // стартует foregroundservice с интентом, который задается выше
+
+            //val pendingIntent: PendingIntent = PendingIntent.getForegroundService(context,1,intent,PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_CANCEL_CURRENT)
 
 
-            // Get the layout for the widget and attach an on-click listener
-            // to the button.
+            // Получение View для последующего назначения ClickListener-a
             val views = RemoteViews(
                 context?.packageName,
                 R.layout.widgetlayout
             )
 
-            views.setOnClickPendingIntent(R.id.widget_button, pendingIntent)
+            //Задаем ClickListener
 
-            // Tell the AppWidgetManager to perform an update on the current
-            // widget.
+            //views.setOnClickPendingIntent(R.id.widget_button, pendingIntent)
+
+            //Применяем изменения при добавлении виджета
             appWidgetManager?.updateAppWidget(appWidgetId, views)
         }
     }
